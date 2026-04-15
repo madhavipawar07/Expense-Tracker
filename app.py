@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 import io
 import base64
+import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -11,9 +12,18 @@ app = Flask(__name__)
 app.secret_key = "secret123"
 
 
+def get_database_path():
+    if os.getenv("DATABASE_PATH"):
+        return os.getenv("DATABASE_PATH")
+    if os.getenv("VERCEL"):
+        return "/tmp/app.db"
+    return "app.db"
+
+
 # ---------------- DATABASE CONNECTION ----------------
 def get_db():
-    conn = sqlite3.connect("app.db")
+    db_path = get_database_path()
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -43,6 +53,10 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+
+# Ensure the database exists on serverless startup.
+init_db()
 
 
 def generate_base64_chart(fig):
